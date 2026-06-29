@@ -5,6 +5,9 @@ class ProductCard extends StatelessWidget {
   final double price;
   final String image;
   final Color backgroundColor;
+  final String? heroTag;
+  final bool isWishlisted;
+  final VoidCallback? onWishlistTap;
 
   const ProductCard({
     super.key,
@@ -12,25 +15,52 @@ class ProductCard extends StatelessWidget {
     required this.price,
     required this.image,
     required this.backgroundColor,
+    this.heroTag,
+    this.isWishlisted = false,
+    this.onWishlistTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 5),
-          Text('\$$price', style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 5),
-          Center(child: Image.asset(image, height: 175)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 5),
+              Text('\$${price.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 5),
+              Center(
+                child: heroTag != null
+                    ? Hero(
+                        tag: heroTag!,
+                        child: Image.asset(image, height: 175),
+                      )
+                    : Image.asset(image, height: 175),
+              ),
+            ],
+          ),
+          if (onWishlistTap != null)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: onWishlistTap,
+                child: Icon(
+                  isWishlisted ? Icons.favorite : Icons.favorite_border,
+                  color: isWishlisted ? Colors.red : Colors.grey,
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shop_app/pages/home_page.dart';
+import 'package:shop_app/pages/sign_in_page.dart';
+import 'package:shop_app/providers/auth_provider.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp())); // ✅ Riverpod root
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoggedIn = ref.watch(authProvider).isLoggedIn;
+
     return MaterialApp(
       title: 'Shopping App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Lato',
         colorScheme: ColorScheme.fromSeed(
@@ -33,7 +38,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: isLoggedIn ? const HomePage() : const SignInPage(),
     );
   }
 }

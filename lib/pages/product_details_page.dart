@@ -1,124 +1,185 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shop_app/models/cart_item.dart';
+import 'package:shop_app/models/product.dart';
 import 'package:shop_app/providers/cart_provider.dart';
+import 'package:shop_app/providers/wishlist_provider.dart';
 
 class ProductDetailsPage extends ConsumerStatefulWidget {
-  final Map<String, Object?> product;
+  final Product product;
   const ProductDetailsPage({super.key, required this.product});
 
   @override
-  ConsumerState<ProductDetailsPage> createState() => _ProductDetailsPageState();
+  ConsumerState<ProductDetailsPage> createState() =>
+      _ProductDetailsPageState();
 }
 
 class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
-  int selectedSize = 0;
+  int? _selectedSize;
+  Color? _selectedColor;
 
-  void onTap() {
-    if (selectedSize != 0) {
-      ref.read(cartProvider.notifier).addProduct({
-        'id': widget.product['id'] ?? '',
-        'title': widget.product['title'] ?? 'Unknown',
-        'price': _getPrice(),
-        'imageUrl': widget.product['imageUrl'] ?? '',
-        'company': widget.product['company'] ?? '',
-        'size': selectedSize,
-      });
-
+  void _addToCart() {
+    if (_selectedSize == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product added successfully!')),
+        const SnackBar(content: Text('Please select a size!')),
       );
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a size!')));
+      return;
     }
-  }
-
-  double _getPrice() {
-    final price = widget.product['price'];
-    if (price is int) return price.toDouble();
-    if (price is double) return price;
-    if (price is String) return double.tryParse(price) ?? 0.0;
-    return 0.0;
+    ref.read(cartProvider.notifier).addItem(CartItem(
+          product: widget.product,
+          size: _selectedSize!,
+          color: _selectedColor,
+        ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Added to cart!')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.product['title'] as String? ?? 'No title';
-    final imageUrl = widget.product['imageUrl'] as String? ?? '';
-    final sizes = (widget.product['sizes'] as List<int>?) ?? [];
+    final p = widget.product;
+    final wishlist = ref.watch(wishlistProvider);
+    final isWishlisted = wishlist.any((w) => w.id == p.id);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Details')),
-      body: Column(
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const Spacer(),
-          if (imageUrl.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Image.asset(imageUrl, height: 250),
-            )
-          else
-            const Icon(Icons.image_not_supported, size: 150),
-          const Spacer(flex: 2),
-          Container(
-            height: 250,
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(245, 247, 249, 1),
-              borderRadius: BorderRadius.circular(40),
+      appBar: AppBar(
+        title: const Text('Details'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isWishlisted ? Icons.favorite : Icons.favorite_border,
+              color: isWishlisted ? Colors.red : null,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '\$${_getPrice()}',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 10),
-                if (sizes.isNotEmpty)
-                  SizedBox(
-                    height: 50,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: sizes.length,
-                      itemBuilder: (context, index) {
-                        final size = sizes[index];
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GestureDetector(
-                            onTap: () => setState(() => selectedSize = size),
-                            child: Chip(
-                              label: Text(size.toString()),
-                              backgroundColor: selectedSize == size
-                                  ? Theme.of(context).colorScheme.primary
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  )
-                else
-                  const Text("No sizes available"),
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: ElevatedButton(
-                    onPressed: onTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      fixedSize: const Size(350, 50),
-                    ),
-                    child: const Text(
-                      'Add To Cart',
-                      style: TextStyle(color: Colors.black, fontSize: 18),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            onPressed: () =>
+                ref.read(wishlistProvider.notifier).toggle(p),
           ),
         ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(p.title,
+                  style: Theme.of(context).textTheme.titleLarge),
+            ),
+            const SizedBox(height: 16),
+            Hero(
+              tag: 'product-${p.id}',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Image.asset(p.imageUrl, height: 250),
+              ),
+            ),
+            if (p.description.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: Text(
+                  p.description,
+                  style: TextStyle(
+                      color: Colors.grey[600], fontSize: 15, height: 1.5),
+                ),
+              ),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(245, 247, 249, 1),
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                      '\$${p.price.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (p.colors.isNotEmpty) ...[
+                    const Text('Color',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 44,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: p.colors.length,
+                        itemBuilder: (context, i) {
+                          final color = p.colors[i];
+                          final selected = _selectedColor == color;
+                          return GestureDetector(
+                            onTap: () =>
+                                setState(() => _selectedColor = color),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 10),
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey.shade300,
+                                  width: selected ? 3 : 1,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  const Text('Size',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 10),
+                  if (p.sizes.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      children: p.sizes.map((size) {
+                        final selected = _selectedSize == size;
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedSize = size),
+                          child: Chip(
+                            label: Text('$size'),
+                            backgroundColor: selected
+                                ? Theme.of(context).colorScheme.primary
+                                : null,
+                          ),
+                        );
+                      }).toList(),
+                    )
+                  else
+                    const Text('No sizes available'),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _addToCart,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primary,
+                      ),
+                      child: const Text('Add To Cart',
+                          style: TextStyle(
+                              color: Colors.black, fontSize: 18)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
