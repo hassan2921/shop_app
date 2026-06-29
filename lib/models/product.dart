@@ -20,4 +20,19 @@ class Product {
     this.colors = const [],
     this.description = '',
   });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      price: (json['price'] as num).toDouble(),
+      imageUrl: json['imageUrl'] as String,
+      company: json['company'] as String,
+      sizes: (json['sizes'] as List<dynamic>).map((e) => e as int).toList(),
+      colors: (json['colors'] as List<dynamic>? ?? [])
+          .map((e) => Color(e as int))
+          .toList(),
+      description: json['description'] as String? ?? '',
+    );
+  }
 }

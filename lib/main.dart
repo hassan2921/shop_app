@@ -13,7 +13,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoggedIn = ref.watch(authProvider).isLoggedIn;
+    final auth = ref.watch(authProvider);
 
     return MaterialApp(
       title: 'Shopping App',
@@ -38,7 +38,11 @@ class MyApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      home: isLoggedIn ? const HomePage() : const SignInPage(),
+      home: auth.isLoading
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : auth.isLoggedIn
+              ? const HomePage()
+              : const SignInPage(),
     );
   }
 }

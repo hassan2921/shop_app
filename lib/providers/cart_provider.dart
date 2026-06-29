@@ -1,75 +1,49 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/models/cart_item.dart';
+import 'package:shop_app/services/api_service.dart';
 
 final searchProvider = StateProvider<String>((ref) => '');
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]) {
-    _loadCart();
+    _loadFromApi();
   }
 
-  Future<void> _loadCart() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('cart');
-    if (raw != null) {
-      final decoded = jsonDecode(raw) as List<dynamic>;
-      state = decoded
-          .map((e) => CartItem.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
+  Future<void> _loadFromApi() async {
+    try {
+      state = await ApiService.instance.getCart();
+    } catch (_) {}
   }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        'cart', jsonEncode(state.map((e) => e.toJson()).toList()));
+  Future<void> addItem(CartItem item) async {
+    try {
+      state = await ApiService.instance.addToCart(item);
+    } catch (_) {}
   }
 
-  // Uses CartItem.== (product id + size + color) — no silent reference bugs.
-  void addItem(CartItem newItem) {
-    final index = state.indexWhere((i) => i == newItem);
-    if (index >= 0) {
-      state = [
-        ...state.sublist(0, index),
-        state[index].copyWith(quantity: state[index].quantity + 1),
-        ...state.sublist(index + 1),
-      ];
-    } else {
-      state = [...state, newItem];
-    }
-    _save();
+  Future<void> removeItem(CartItem item) async {
+    try {
+      state = await ApiService.instance.removeFromCart(item);
+    } catch (_) {}
   }
 
-  void removeItem(CartItem item) {
-    state = state.where((i) => i != item).toList();
-    _save();
+  Future<void> incrementQuantity(CartItem item) async {
+    try {
+      state = await ApiService.instance.incrementCartItem(item);
+    } catch (_) {}
   }
 
-  void incrementQuantity(CartItem item) {
-    state = state
-        .map((i) => i == item ? i.copyWith(quantity: i.quantity + 1) : i)
-        .toList();
-    _save();
+  Future<void> decrementQuantity(CartItem item) async {
+    try {
+      state = await ApiService.instance.decrementCartItem(item);
+    } catch (_) {}
   }
 
-  void decrementQuantity(CartItem item) {
-    final index = state.indexWhere((i) => i == item);
-    if (index < 0) return;
-    if (state[index].quantity <= 1) {
-      state = state.where((i) => i != item).toList();
-    } else {
-      state = state
-          .map((i) => i == item ? i.copyWith(quantity: i.quantity - 1) : i)
-          .toList();
-    }
-    _save();
-  }
-
-  void clearCart() {
-    state = [];
-    _save();
+  Future<void> clearCart() async {
+    try {
+      await ApiService.instance.clearCart();
+      state = [];
+    } catch (_) {}
   }
 
   double get totalPrice =>

@@ -46,6 +46,16 @@ class CartItem {
         'quantity': quantity,
       };
 
+  // Deserialises an item returned by the backend (product object embedded).
+  factory CartItem.fromApiJson(Map<String, dynamic> json) {
+    return CartItem(
+      product: Product.fromJson(json['product'] as Map<String, dynamic>),
+      size: json['size'] as int,
+      color: json['color'] != null ? Color(json['color'] as int) : null,
+      quantity: json['quantity'] as int? ?? 1,
+    );
+  }
+
   factory CartItem.fromJson(Map<String, dynamic> json) {
     final product = Product(
       id: json['productId'] as String,

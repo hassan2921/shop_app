@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shop_app/global_variables.dart';
 import 'package:shop_app/models/product.dart';
 import 'package:shop_app/pages/product_details_page.dart';
 import 'package:shop_app/providers/cart_provider.dart';
+import 'package:shop_app/providers/product_provider.dart';
 import 'package:shop_app/providers/wishlist_provider.dart';
 import 'package:shop_app/widgets/product_card.dart';
 
@@ -20,27 +20,17 @@ class _ProductListState extends ConsumerState<ProductList> {
   static const _filters = ['All', 'Adidas', 'Nike', 'Bata'];
   String _selectedFilter = 'All';
   _SortOption _sort = _SortOption.none;
+  RangeValues? _priceRange;
 
-  static final double _minPrice =
-      products.map((p) => p.price).reduce((a, b) => a < b ? a : b);
-  static final double _maxPrice =
-      products.map((p) => p.price).reduce((a, b) => a > b ? a : b);
-  late RangeValues _priceRange;
-
-  @override
-  void initState() {
-    super.initState();
-    _priceRange = RangeValues(_minPrice, _maxPrice);
-  }
-
-  List<Product> _applyFilters(String query) {
-    var list = products.where((p) {
+  List<Product> _applyFilters(List<Product> all, String query) {
+    final range = _priceRange;
+    var list = all.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(query) ||
           p.company.toLowerCase().contains(query);
       final matchesFilter = _selectedFilter == 'All' ||
           p.company.toLowerCase() == _selectedFilter.toLowerCase();
-      final matchesPrice =
-          p.price >= _priceRange.start && p.price <= _priceRange.end;
+      final matchesPrice = range == null ||
+          (p.price >= range.start && p.price <= range.end);
       return matchesSearch && matchesFilter && matchesPrice;
     }).toList();
 
@@ -59,15 +49,15 @@ class _ProductListState extends ConsumerState<ProductList> {
 
   @override
   Widget build(BuildContext context) {
+    final productsAsync = ref.watch(productListProvider);
+    final query = ref.watch(searchProvider).toLowerCase();
+    final wishlistIds =
+        ref.watch(wishlistProvider).map((p) => p.id).toSet();
+
     const border = OutlineInputBorder(
       borderSide: BorderSide(color: Color.fromRGBO(225, 225, 225, 1)),
       borderRadius: BorderRadius.horizontal(left: Radius.circular(50)),
     );
-
-    final query = ref.watch(searchProvider).toLowerCase();
-    final wishlistIds =
-        ref.watch(wishlistProvider).map((p) => p.id).toSet();
-    final filtered = _applyFilters(query);
 
     return SafeArea(
       child: Column(
@@ -112,26 +102,6 @@ class _ProductListState extends ConsumerState<ProductList> {
               ),
             ],
           ),
-          // Price range slider
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text('\$${_priceRange.start.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 12)),
-                Expanded(
-                  child: RangeSlider(
-                    min: _minPrice,
-                    max: _maxPrice,
-                    values: _priceRange,
-                    onChanged: (v) => setState(() => _priceRange = v),
-                  ),
-                ),
-                Text('\$${_priceRange.end.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
           // Brand filter chips
           SizedBox(
             height: 60,
@@ -164,43 +134,129 @@ class _ProductListState extends ConsumerState<ProductList> {
               },
             ),
           ),
-          // Product list or empty state
+          // Product area
           Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off,
-                            size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 12),
-                        Text('No products found',
-                            style: TextStyle(
-                                color: Colors.grey[600], fontSize: 16)),
-                      ],
+            child: productsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    Text('Could not load products',
+                        style: TextStyle(
+                            color: Colors.grey[600], fontSize: 16)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.invalidate(productListProvider),
+                      child: const Text('Retry'),
                     ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth > 1080) {
-                        return GridView.builder(
-                          itemCount: filtered.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 1.75,
+                  ],
+                ),
+              ),
+              data: (productList) {
+                // Initialise price range once after first load.
+                if (_priceRange == null && productList.isNotEmpty) {
+                  final prices = productList.map((p) => p.price).toList();
+                  final mn =
+                      prices.reduce((a, b) => a < b ? a : b);
+                  final mx =
+                      prices.reduce((a, b) => a > b ? a : b);
+                  _priceRange = RangeValues(mn, mx);
+                }
+
+                final minP = _priceRange?.start ?? 0;
+                final maxP = _priceRange?.end ?? 1000;
+                final filtered = _applyFilters(productList, query);
+
+                return Column(
+                  children: [
+                    // Price range slider
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Text('\$${minP.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 12)),
+                          Expanded(
+                            child: RangeSlider(
+                              min: productList.isEmpty
+                                  ? 0
+                                  : productList
+                                      .map((p) => p.price)
+                                      .reduce((a, b) => a < b ? a : b),
+                              max: productList.isEmpty
+                                  ? 1000
+                                  : productList
+                                      .map((p) => p.price)
+                                      .reduce((a, b) => a > b ? a : b),
+                              values: _priceRange ??
+                                  RangeValues(minP, maxP),
+                              onChanged: (v) =>
+                                  setState(() => _priceRange = v),
+                            ),
                           ),
-                          itemBuilder: (context, index) => _buildCard(
-                              context, filtered[index], index, wishlistIds),
-                        );
-                      }
-                      return ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) => _buildCard(
-                            context, filtered[index], index, wishlistIds),
-                      );
-                    },
-                  ),
+                          Text('\$${maxP.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.search_off,
+                                      size: 64,
+                                      color: Colors.grey[400]),
+                                  const SizedBox(height: 12),
+                                  Text('No products found',
+                                      style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 16)),
+                                ],
+                              ),
+                            )
+                          : LayoutBuilder(
+                              builder: (context, constraints) {
+                                if (constraints.maxWidth > 1080) {
+                                  return GridView.builder(
+                                    itemCount: filtered.length,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      childAspectRatio: 1.75,
+                                    ),
+                                    itemBuilder: (context, index) =>
+                                        _buildCard(
+                                            context,
+                                            filtered[index],
+                                            index,
+                                            wishlistIds),
+                                  );
+                                }
+                                return ListView.builder(
+                                  itemCount: filtered.length,
+                                  itemBuilder: (context, index) =>
+                                      _buildCard(
+                                          context,
+                                          filtered[index],
+                                          index,
+                                          wishlistIds),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
