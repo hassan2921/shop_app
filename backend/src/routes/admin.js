@@ -1,10 +1,67 @@
+const path = require('path');
 const express = require('express');
+const multer = require('multer');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const adminAuth = require('../middleware/adminAuth');
 
 const router = express.Router();
 router.use(adminAuth);
+
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../../../uploads'),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ─── Image upload ───────────────────────────────────────────────────────────
+
+// POST /api/admin/upload
+router.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({ url });
+});
+
+// ─── Categories ─────────────────────────────────────────────────────────────
+
+// GET /api/admin/categories
+router.get('/categories', async (req, res) => {
+  try {
+    const categories = await Category.find({}).sort({ name: 1 });
+    res.json({ categories });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/admin/categories
+router.post('/categories', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ message: 'name is required' });
+    const category = await Category.create({ name: name.trim() });
+    res.status(201).json({ category });
+  } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ message: 'Category already exists' });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// DELETE /api/admin/categories/:id
+router.delete('/categories/:id', async (req, res) => {
+  try {
+    const category = await Category.findByIdAndDelete(req.params.id);
+    if (!category) return res.status(404).json({ message: 'Category not found' });
+    res.json({ message: 'Category deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 const VALID_STATUSES = ['pending', 'processing', 'shipped', 'delivered'];
 
@@ -53,9 +110,9 @@ router.get('/products', async (req, res) => {
 // POST /api/admin/products
 router.post('/products', async (req, res) => {
   try {
-    const { id, title, price, imageUrl, company, category = 'Other', sizes = [], colors = [], description = '' } = req.body;
-    if (!id || !title || !price || !imageUrl || !company) {
-      return res.status(400).json({ message: 'id, title, price, imageUrl and company are required' });
+    const { id, title, price, imageUrl, company, category, sizes = [], colors = [], description = '' } = req.body;
+    if (!id || !title || !price || !imageUrl || !company || !category) {
+      return res.status(400).json({ message: 'id, title, price, imageUrl, company and category are required' });
     }
     if (await Product.findOne({ id })) {
       return res.status(409).json({ message: 'A product with that id already exists' });

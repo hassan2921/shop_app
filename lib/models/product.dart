@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
 
-const kProductCategories = [
-  'Shoes',
-  'Clothing',
-  'Accessories',
-  'Electronics',
-  'Sports',
-  'Other',
-];
-
 class Product {
   final String id;
   final String title;

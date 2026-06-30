@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shop_app/models/product.dart';
 import 'package:shop_app/pages/product_details_page.dart';
 import 'package:shop_app/providers/cart_provider.dart';
+import 'package:shop_app/providers/category_provider.dart';
 import 'package:shop_app/providers/product_provider.dart';
 import 'package:shop_app/providers/wishlist_provider.dart';
 import 'package:shop_app/widgets/product_card.dart';
@@ -17,7 +18,6 @@ class ProductList extends ConsumerStatefulWidget {
 }
 
 class _ProductListState extends ConsumerState<ProductList> {
-  static const _filters = ['All', ...kProductCategories];
   String _selectedFilter = 'All';
   _SortOption _sort = _SortOption.none;
   RangeValues? _priceRange;
@@ -101,37 +101,40 @@ class _ProductListState extends ConsumerState<ProductList> {
               ),
             ],
           ),
-          // Category filter chips
-          SizedBox(
-            height: 60,
-            child: ListView.builder(
-              itemCount: _filters.length,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemBuilder: (context, index) {
-                final filter = _filters[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: GestureDetector(
-                    onTap: () =>
-                        setState(() => _selectedFilter = filter),
-                    child: Chip(
-                      backgroundColor: _selectedFilter == filter
-                          ? Theme.of(context).colorScheme.primary
-                          : const Color.fromRGBO(245, 247, 249, 1),
-                      side: const BorderSide(
-                          color: Color.fromRGBO(245, 247, 249, 1)),
-                      label: Text(filter),
-                      labelStyle: const TextStyle(fontSize: 16),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
-                    ),
-                  ),
-                );
-              },
-            ),
+          // Category filter chips (dynamic from API)
+          ref.watch(categoryProvider).when(
+            loading: () => const SizedBox(height: 60, child: Center(child: LinearProgressIndicator())),
+            error: (_, __) => const SizedBox(height: 60),
+            data: (categories) {
+              final filters = ['All', ...categories];
+              return SizedBox(
+                height: 60,
+                child: ListView.builder(
+                  itemCount: filters.length,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  itemBuilder: (context, index) {
+                    final filter = filters[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedFilter = filter),
+                        child: Chip(
+                          backgroundColor: _selectedFilter == filter
+                              ? Theme.of(context).colorScheme.primary
+                              : const Color.fromRGBO(245, 247, 249, 1),
+                          side: const BorderSide(color: Color.fromRGBO(245, 247, 249, 1)),
+                          label: Text(filter),
+                          labelStyle: const TextStyle(fontSize: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
           // Product area
           Expanded(

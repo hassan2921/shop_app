@@ -1,4 +1,4 @@
-// Real device on the same WiFi → use the machine's LAN IP (current: 192.168.18.34)
-// Android emulator → change back to http://10.0.2.2:3000/api
-// Linux desktop → use http://localhost:3000/api
-const String kApiBaseUrl = 'http://192.168.18.34:3000/api';
+// Real device on the same WiFi → use the machine's LAN IP (run: ip addr show | grep "inet ")
+// Android emulator → http://10.0.2.2:3000/api
+// Linux desktop / Flutter web → http://localhost:3000/api
+const String kApiBaseUrl = 'http://localhost:3000/api';

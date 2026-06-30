@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shop_app/pages/admin_categories_page.dart';
 import 'package:shop_app/pages/admin_orders_page.dart';
 import 'package:shop_app/pages/admin_products_page.dart';
 import 'package:shop_app/providers/auth_provider.dart';
@@ -17,6 +18,7 @@ class _AdminHomePageState extends ConsumerState<AdminHomePage> {
   static const _pages = <Widget>[
     AdminOrdersPage(),
     AdminProductsPage(),
+    AdminCategoriesPage(),
     _AdminAccountTab(),
   ];
 
@@ -41,6 +43,11 @@ class _AdminHomePageState extends ConsumerState<AdminHomePage> {
             icon: Icon(Icons.inventory_2_outlined),
             activeIcon: Icon(Icons.inventory_2),
             label: 'Products',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.category_outlined),
+            activeIcon: Icon(Icons.category),
+            label: 'Categories',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outlined),

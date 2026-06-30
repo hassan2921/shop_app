@@ -4,6 +4,7 @@ import 'package:shop_app/constants.dart';
 import 'package:shop_app/models/cart_item.dart';
 import 'package:shop_app/models/order.dart';
 import 'package:shop_app/models/product.dart';
+import 'package:shop_app/models/category.dart';
 
 class ApiService {
   ApiService._();
@@ -158,6 +159,32 @@ class ApiService {
       'total': total,
     });
     return Order.fromJson(res.data['order'] as Map<String, dynamic>);
+  }
+
+  // ---------- Categories ----------
+
+  Future<List<Category>> getCategories() async {
+    final res = await _dio.get('/categories');
+    return (res.data['categories'] as List<dynamic>)
+        .map((e) => Category.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Category> createCategory(String name) async {
+    final res = await _dio.post('/admin/categories', data: {'name': name});
+    return Category.fromJson(res.data['category'] as Map<String, dynamic>);
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await _dio.delete('/admin/categories/$id');
+  }
+
+  Future<String> uploadImage(String filePath) async {
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(filePath),
+    });
+    final res = await _dio.post('/admin/upload', data: formData);
+    return res.data['url'] as String;
   }
 
   // ---------- Admin ----------
