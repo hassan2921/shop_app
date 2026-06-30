@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 
+const kProductCategories = [
+  'Shoes',
+  'Clothing',
+  'Accessories',
+  'Electronics',
+  'Sports',
+  'Other',
+];
+
 class Product {
   final String id;
   final String title;
   final double price;
   final String imageUrl;
   final String company;
+  final String category;
   final List<int> sizes;
   final List<Color> colors;
   final String description;
@@ -16,6 +26,7 @@ class Product {
     required this.price,
     required this.imageUrl,
     required this.company,
+    this.category = 'Other',
     required this.sizes,
     this.colors = const [],
     this.description = '',
@@ -28,6 +39,7 @@ class Product {
       price: (json['price'] as num).toDouble(),
       imageUrl: json['imageUrl'] as String,
       company: json['company'] as String,
+      category: json['category'] as String? ?? 'Other',
       sizes: (json['sizes'] as List<dynamic>).map((e) => e as int).toList(),
       colors: (json['colors'] as List<dynamic>? ?? [])
           .map((e) => Color(e as int))

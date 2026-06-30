@@ -5,6 +5,9 @@ import 'package:shop_app/providers/product_provider.dart';
 import 'package:shop_app/services/api_service.dart';
 import 'package:shop_app/utils/product_image.dart';
 
+// keep in sync with backend CATEGORIES enum
+const _categories = kProductCategories;
+
 final _adminProductsProvider = FutureProvider<List<Product>>((ref) async {
   return ApiService.instance.getAdminProducts();
 });
@@ -164,6 +167,7 @@ class _ProductFormPageState extends State<_ProductFormPage> {
   late final TextEditingController _company;
   late final TextEditingController _sizes;
   late final TextEditingController _description;
+  late String _category;
   bool _saving = false;
 
   bool get _isEdit => widget.product != null;
@@ -179,6 +183,7 @@ class _ProductFormPageState extends State<_ProductFormPage> {
     _company = TextEditingController(text: p?.company ?? '');
     _sizes = TextEditingController(text: p != null ? p.sizes.join(', ') : '');
     _description = TextEditingController(text: p?.description ?? '');
+    _category = p?.category ?? _categories.first;
   }
 
   @override
@@ -205,6 +210,7 @@ class _ProductFormPageState extends State<_ProductFormPage> {
       'price': double.parse(_price.text.trim()),
       'imageUrl': _imageUrl.text.trim(),
       'company': _company.text.trim(),
+      'category': _category,
       'sizes': sizes,
       'colors': [],
       'description': _description.text.trim(),
@@ -238,6 +244,20 @@ class _ProductFormPageState extends State<_ProductFormPage> {
             if (!_isEdit)
               _field(_id, 'Product ID', 'e.g. shoe_5', required: true),
             _field(_title, 'Title', 'e.g. Nike Air Max', required: true),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: DropdownButtonFormField<String>(
+                initialValue: _category,
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) { if (v != null) _category = v; },
+              ),
+            ),
             _field(_price, 'Price', 'e.g. 99.99',
                 required: true,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),

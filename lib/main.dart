@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shop_app/pages/admin_home_page.dart';
 import 'package:shop_app/pages/home_page.dart';
 import 'package:shop_app/pages/sign_in_page.dart';
 import 'package:shop_app/providers/auth_provider.dart';
@@ -41,7 +42,7 @@ class MyApp extends ConsumerWidget {
       home: auth.isLoading
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : auth.isLoggedIn
-              ? const HomePage()
+              ? (auth.isAdmin ? const AdminHomePage() : const HomePage())
               : const SignInPage(),
     );
   }

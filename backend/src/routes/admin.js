@@ -53,14 +53,14 @@ router.get('/products', async (req, res) => {
 // POST /api/admin/products
 router.post('/products', async (req, res) => {
   try {
-    const { id, title, price, imageUrl, company, sizes = [], colors = [], description = '' } = req.body;
+    const { id, title, price, imageUrl, company, category = 'Other', sizes = [], colors = [], description = '' } = req.body;
     if (!id || !title || !price || !imageUrl || !company) {
       return res.status(400).json({ message: 'id, title, price, imageUrl and company are required' });
     }
     if (await Product.findOne({ id })) {
       return res.status(409).json({ message: 'A product with that id already exists' });
     }
-    const product = await Product.create({ id, title, price, imageUrl, company, sizes, colors, description });
+    const product = await Product.create({ id, title, price, imageUrl, company, category, sizes, colors, description });
     res.status(201).json({ product });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -70,10 +70,10 @@ router.post('/products', async (req, res) => {
 // PUT /api/admin/products/:id
 router.put('/products/:id', async (req, res) => {
   try {
-    const { title, price, imageUrl, company, sizes, colors, description } = req.body;
+    const { title, price, imageUrl, company, category, sizes, colors, description } = req.body;
     const product = await Product.findOneAndUpdate(
       { id: req.params.id },
-      { title, price, imageUrl, company, sizes, colors, description },
+      { title, price, imageUrl, company, category, sizes, colors, description },
       { new: true, runValidators: true }
     );
     if (!product) return res.status(404).json({ message: 'Product not found' });
