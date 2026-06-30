@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/constants.dart';
 import 'package:shop_app/models/cart_item.dart';
+import 'package:shop_app/models/order.dart';
 import 'package:shop_app/models/product.dart';
 
 class ApiService {
@@ -129,6 +130,62 @@ class ApiService {
     return _parseProducts(res.data['products'] as List<dynamic>);
   }
 
+  // ---------- Orders ----------
+
+  Future<List<Order>> getOrders() async {
+    final res = await _dio.get('/orders');
+    return _parseOrders(res.data['orders'] as List<dynamic>);
+  }
+
+  Future<Order> createOrder(List<CartItem> items, double total) async {
+    final res = await _dio.post('/orders', data: {
+      'items': items
+          .map((i) => {
+                'productId': i.product.id,
+                'title': i.product.title,
+                'imageUrl': i.product.imageUrl,
+                'price': i.product.price,
+                'size': i.size,
+                'color': i.color?.toARGB32(),
+                'quantity': i.quantity,
+              })
+          .toList(),
+      'total': total,
+    });
+    return Order.fromJson(res.data['order'] as Map<String, dynamic>);
+  }
+
+  // ---------- Admin ----------
+
+  Future<List<Order>> getAdminOrders() async {
+    final res = await _dio.get('/admin/orders');
+    return _parseOrders(res.data['orders'] as List<dynamic>);
+  }
+
+  Future<Order> updateOrderStatus(String orderId, String status) async {
+    final res = await _dio.patch('/admin/orders/$orderId/status', data: {'status': status});
+    return Order.fromJson(res.data['order'] as Map<String, dynamic>);
+  }
+
+  Future<List<Product>> getAdminProducts() async {
+    final res = await _dio.get('/admin/products');
+    return _parseProducts(res.data['products'] as List<dynamic>);
+  }
+
+  Future<Product> createProduct(Map<String, dynamic> data) async {
+    final res = await _dio.post('/admin/products', data: data);
+    return Product.fromJson(res.data['product'] as Map<String, dynamic>);
+  }
+
+  Future<Product> updateProduct(String id, Map<String, dynamic> data) async {
+    final res = await _dio.put('/admin/products/$id', data: data);
+    return Product.fromJson(res.data['product'] as Map<String, dynamic>);
+  }
+
+  Future<void> deleteProduct(String id) async {
+    await _dio.delete('/admin/products/$id');
+  }
+
   // ---------- Helpers ----------
 
   List<CartItem> _parseItems(List<dynamic> raw) =>
@@ -136,4 +193,7 @@ class ApiService {
 
   List<Product> _parseProducts(List<dynamic> raw) =>
       raw.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
+
+  List<Order> _parseOrders(List<dynamic> raw) =>
+      raw.map((e) => Order.fromJson(e as Map<String, dynamic>)).toList();
 }

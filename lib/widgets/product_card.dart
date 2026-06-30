@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shop_app/utils/product_image.dart';
 
 class ProductCard extends StatelessWidget {
   final String title;
@@ -41,11 +42,8 @@ class ProductCard extends StatelessWidget {
               const SizedBox(height: 5),
               Center(
                 child: heroTag != null
-                    ? Hero(
-                        tag: heroTag!,
-                        child: Image.asset(image, height: 175),
-                      )
-                    : Image.asset(image, height: 175),
+                    ? Hero(tag: heroTag!, child: productImage(image, height: 175))
+                    : productImage(image, height: 175),
               ),
             ],
           ),

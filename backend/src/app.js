@@ -11,6 +11,8 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/wishlist', require('./routes/wishlist'));
 app.use('/api/user', require('./routes/user'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/admin', require('./routes/admin'));
 
 app.use((err, req, res, next) => {
   console.error(err);

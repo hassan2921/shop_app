@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shop_app/models/cart_item.dart';
 import 'package:shop_app/models/product.dart';
 import 'package:shop_app/providers/cart_provider.dart';
 import 'package:shop_app/providers/wishlist_provider.dart';
+import 'package:shop_app/utils/product_image.dart';
 
 class ProductDetailsPage extends ConsumerStatefulWidget {
   final Product product;
@@ -46,12 +48,21 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
         title: const Text('Details'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.share_outlined),
+            onPressed: () {
+              final text = StringBuffer()
+                ..writeln('Check out ${p.title}!')
+                ..writeln('\$${p.price.toStringAsFixed(2)}  •  ${p.company}');
+              if (p.description.isNotEmpty) text.writeln('\n${p.description}');
+              Share.share(text.toString());
+            },
+          ),
+          IconButton(
             icon: Icon(
               isWishlisted ? Icons.favorite : Icons.favorite_border,
               color: isWishlisted ? Colors.red : null,
             ),
-            onPressed: () =>
-                ref.read(wishlistProvider.notifier).toggle(p),
+            onPressed: () => ref.read(wishlistProvider.notifier).toggle(p),
           ),
         ],
       ),
@@ -70,7 +81,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
               tag: 'product-${p.id}',
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Image.asset(p.imageUrl, height: 250),
+                child: productImage(p.imageUrl, height: 250),
               ),
             ),
             if (p.description.isNotEmpty)

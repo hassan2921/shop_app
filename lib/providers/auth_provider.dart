@@ -9,12 +9,14 @@ class AuthState {
   final bool isLoading;
   final String userName;
   final String email;
+  final bool isAdmin;
 
   const AuthState({
     this.isLoggedIn = false,
     this.isLoading = true,
     this.userName = '',
     this.email = '',
+    this.isAdmin = false,
   });
 }
 
@@ -40,6 +42,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         userName: user['name'] as String,
         email: user['email'] as String,
+        isAdmin: user['isAdmin'] as bool? ?? false,
       );
     } catch (_) {
       await prefs.remove('token');
@@ -67,6 +70,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isLoading: false,
       userName: user['name'] as String,
       email: user['email'] as String,
+      isAdmin: user['isAdmin'] as bool? ?? false,
     );
     // Reload per-user data with the new identity.
     _ref.invalidate(cartProvider);

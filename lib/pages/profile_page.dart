@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shop_app/pages/admin_panel_page.dart';
+import 'package:shop_app/pages/orders_page.dart';
 import 'package:shop_app/providers/auth_provider.dart';
 import 'package:shop_app/providers/cart_provider.dart';
 import 'package:shop_app/providers/wishlist_provider.dart';
@@ -47,18 +49,28 @@ class ProfilePage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 32),
-            const _ProfileTile(
-                icon: Icons.shopping_bag_outlined, title: 'My Orders'),
-            const _ProfileTile(
-                icon: Icons.location_on_outlined,
-                title: 'Shipping Address'),
-            const _ProfileTile(
-                icon: Icons.payment_outlined, title: 'Payment Methods'),
-            const _ProfileTile(
-                icon: Icons.notifications_outlined,
-                title: 'Notifications'),
-            const _ProfileTile(
-                icon: Icons.help_outline, title: 'Help & Support'),
+            _ProfileTile(
+              icon: Icons.shopping_bag_outlined,
+              title: 'My Orders',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const OrdersPage()),
+              ),
+            ),
+            const _ProfileTile(icon: Icons.location_on_outlined, title: 'Shipping Address'),
+            const _ProfileTile(icon: Icons.payment_outlined, title: 'Payment Methods'),
+            const _ProfileTile(icon: Icons.notifications_outlined, title: 'Notifications'),
+            const _ProfileTile(icon: Icons.help_outline, title: 'Help & Support'),
+            if (auth.isAdmin) ...[
+              const Divider(height: 32),
+              _ProfileTile(
+                icon: Icons.admin_panel_settings_outlined,
+                title: 'Admin Panel',
+                iconColor: Colors.deepPurple,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminPanelPage()),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -115,15 +127,17 @@ class _StatCard extends StatelessWidget {
 class _ProfileTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  const _ProfileTile({required this.icon, required this.title});
+  final VoidCallback? onTap;
+  final Color? iconColor;
+  const _ProfileTile({required this.icon, required this.title, this.onTap, this.iconColor});
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon),
+      leading: Icon(icon, color: iconColor),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }
