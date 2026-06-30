@@ -17,7 +17,7 @@ class ProductList extends ConsumerStatefulWidget {
 }
 
 class _ProductListState extends ConsumerState<ProductList> {
-  static const _filters = ['All', 'Adidas', 'Nike', 'Bata'];
+  static const _filters = ['All', ...kProductCategories];
   String _selectedFilter = 'All';
   _SortOption _sort = _SortOption.none;
   RangeValues? _priceRange;
@@ -27,8 +27,7 @@ class _ProductListState extends ConsumerState<ProductList> {
     var list = all.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(query) ||
           p.company.toLowerCase().contains(query);
-      final matchesFilter = _selectedFilter == 'All' ||
-          p.company.toLowerCase() == _selectedFilter.toLowerCase();
+      final matchesFilter = _selectedFilter == 'All' || p.category == _selectedFilter;
       final matchesPrice = range == null ||
           (p.price >= range.start && p.price <= range.end);
       return matchesSearch && matchesFilter && matchesPrice;
@@ -67,7 +66,7 @@ class _ProductListState extends ConsumerState<ProductList> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Text('Shoes\nCollection',
+                child: Text('Shop\nCollection',
                     style: Theme.of(context).textTheme.titleLarge),
               ),
               Expanded(
@@ -102,7 +101,7 @@ class _ProductListState extends ConsumerState<ProductList> {
               ),
             ],
           ),
-          // Brand filter chips
+          // Category filter chips
           SizedBox(
             height: 60,
             child: ListView.builder(
@@ -278,6 +277,7 @@ class _ProductListState extends ConsumerState<ProductList> {
             ? const Color.fromRGBO(216, 240, 253, 1)
             : const Color.fromRGBO(245, 247, 249, 1),
         heroTag: 'product-${product.id}',
+        category: product.category,
         isWishlisted: wishlistIds.contains(product.id),
         onWishlistTap: () =>
             ref.read(wishlistProvider.notifier).toggle(product),

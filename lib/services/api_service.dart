@@ -137,6 +137,11 @@ class ApiService {
     return _parseOrders(res.data['orders'] as List<dynamic>);
   }
 
+  Future<Order> getOrder(String id) async {
+    final res = await _dio.get('/orders/$id');
+    return Order.fromJson(res.data['order'] as Map<String, dynamic>);
+  }
+
   Future<Order> createOrder(List<CartItem> items, double total) async {
     final res = await _dio.post('/orders', data: {
       'items': items

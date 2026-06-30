@@ -7,6 +7,7 @@ class ProductCard extends StatelessWidget {
   final String image;
   final Color backgroundColor;
   final String? heroTag;
+  final String? category;
   final bool isWishlisted;
   final VoidCallback? onWishlistTap;
 
@@ -17,6 +18,7 @@ class ProductCard extends StatelessWidget {
     required this.image,
     required this.backgroundColor,
     this.heroTag,
+    this.category,
     this.isWishlisted = false,
     this.onWishlistTap,
   });
@@ -35,6 +37,19 @@ class ProductCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (category != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    category!,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
+                  ),
+                ),
               Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 5),
               Text('\$${price.toStringAsFixed(2)}',
